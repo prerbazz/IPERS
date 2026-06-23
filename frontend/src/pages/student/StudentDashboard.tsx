@@ -30,7 +30,7 @@ export const StudentDashboard: React.FC = () => {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [companyNews, setCompanyNews] = useState<any[]>([]);
   
-  // Data mining results state
+  // Recommendation results state
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<any | null>(null);
@@ -154,18 +154,18 @@ export const StudentDashboard: React.FC = () => {
     }
   };
 
-  // Group eligible companies by cluster
+  // Group eligible companies by category
   const getClusteredCompanies = () => {
     if (!analyticsData) return {};
     const groups: { [key: string]: any[] } = {
       "High CGPA + High Aptitude": [],
       "Technical Skill Focused Companies": [],
       "Service Companies": [],
-      "Unclustered": []
+      "Uncategorized": []
     };
     
     analyticsData.eligible_companies.forEach((item: any) => {
-      const clust = item.company.cluster_type || 'Unclustered';
+      const clust = item.company.cluster_type || 'Uncategorized';
       if (!groups[clust]) groups[clust] = [];
       groups[clust].push(item);
     });
@@ -210,7 +210,7 @@ export const StudentDashboard: React.FC = () => {
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">Welcome back, {profile?.full_name}!</h2>
             <p className="text-slate-300 max-w-xl text-sm md:text-base leading-relaxed">
-              Verify your placement evaluation metrics, manage your PDF resume, and run our intelligent recommendation engine to identify eligible career clusters.
+              Verify your placement evaluation metrics, manage your PDF resume, and run our intelligent recommendation engine to identify eligible career categories.
             </p>
           </div>
           <button
@@ -576,7 +576,7 @@ export const StudentDashboard: React.FC = () => {
                 <Compass className="w-6 h-6 text-teal-accent" />
                 <div>
                   <h3 className="text-lg font-bold text-white font-sans">IPERS Career Guidance Dashboard</h3>
-                  <p className="text-[10px] text-slate-400">Powered by Decision Trees, K-Means Clustering, and KNN Similarity</p>
+                  <p className="text-[10px] text-slate-400">Powered by AI Recommendation Algorithms</p>
                 </div>
               </div>
               <button
@@ -592,8 +592,8 @@ export const StudentDashboard: React.FC = () => {
               {analyticsLoading ? (
                 <div className="py-20 flex flex-col items-center justify-center">
                   <div className="w-12 h-12 border-4 border-teal-accent border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-sm text-slate-300 font-semibold animate-pulse">Running data mining recommendation algorithms...</p>
-                  <p className="text-[11px] text-slate-500 mt-2">Fitting K-Means clusters and traversing eligibility decision trees...</p>
+                  <p className="text-sm text-slate-300 font-semibold animate-pulse">Running intelligent recommendation algorithms...</p>
+                  <p className="text-[11px] text-slate-500 mt-2">Matching your profile with ideal career categories...</p>
                 </div>
               ) : analyticsError ? (
                 <div className="py-12 text-center text-red-400 text-sm">
@@ -630,16 +630,16 @@ export const StudentDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* K-Means Clusters section */}
+                  {/* Categories section */}
                   <div>
                     <h4 className="text-white font-bold text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
                       <Target className="w-4 h-4 text-teal-accent" />
-                      1. K-Means Company Clusters & Eligible Recommendations
+                      1. Company Category Recommendations
                     </h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       
-                      {/* Cluster 0: Tier 1 */}
+                      {/* Category 0: Tier 1 */}
                       <div className="bg-navy-dark/60 rounded-2xl border border-amber-500/20 p-5 relative overflow-hidden flex flex-col min-h-[220px]">
                         <div className="absolute top-0 right-0 p-2 opacity-5">
                           <GoldAward className="w-20 h-20 text-amber-500" />
@@ -649,7 +649,7 @@ export const StudentDashboard: React.FC = () => {
                         </span>
                         <h5 className="text-white text-base font-bold mb-2">High CGPA + High Aptitude</h5>
                         <p className="text-[11px] text-slate-400 leading-relaxed mb-4 flex-grow">
-                          Centroid clusters companies requesting top marks (&gt;8.5 CGPA, &gt;80 Aptitude) and zero arrears.
+                          Companies requesting top marks (&gt;8.5 CGPA, &gt;80 Aptitude) and zero arrears.
                         </p>
                         <div className="space-y-1.5">
                           {clustered["High CGPA + High Aptitude"]?.length > 0 ? (
@@ -664,19 +664,19 @@ export const StudentDashboard: React.FC = () => {
                               </button>
                             ))
                           ) : (
-                            <p className="text-[11px] text-slate-500 italic">No eligible companies in this cluster.</p>
+                            <p className="text-[11px] text-slate-500 italic">No eligible companies in this category.</p>
                           )}
                         </div>
                       </div>
 
-                      {/* Cluster 1: Tech focused */}
+                      {/* Category 1: Tech focused */}
                       <div className="bg-navy-dark/60 rounded-2xl border border-teal-accent/20 p-5 relative overflow-hidden flex flex-col min-h-[220px]">
                         <span className="px-2.5 py-1 bg-teal-accent/10 border border-teal-accent/30 text-teal-accent text-[10px] font-bold rounded-lg self-start mb-3">
                           R&D & Engineering Labs
                         </span>
                         <h5 className="text-white text-base font-bold mb-2">Technical Skill Focused</h5>
                         <p className="text-[11px] text-slate-400 leading-relaxed mb-4 flex-grow">
-                          Centroid isolates companies prioritizing high Technical Scores and practical projects/internships.
+                          Companies prioritizing high Technical Scores and practical projects/internships.
                         </p>
                         <div className="space-y-1.5">
                           {clustered["Technical Skill Focused Companies"]?.length > 0 ? (
@@ -691,19 +691,19 @@ export const StudentDashboard: React.FC = () => {
                               </button>
                             ))
                           ) : (
-                            <p className="text-[11px] text-slate-500 italic">No eligible companies in this cluster.</p>
+                            <p className="text-[11px] text-slate-500 italic">No eligible companies in this category.</p>
                           )}
                         </div>
                       </div>
 
-                      {/* Cluster 2: Service Companies */}
+                      {/* Category 2: Service Companies */}
                       <div className="bg-navy-dark/60 rounded-2xl border border-slate-500/20 p-5 relative overflow-hidden flex flex-col min-h-[220px]">
                         <span className="px-2.5 py-1 bg-slate-500/10 border border-slate-500/30 text-slate-300 text-[10px] font-bold rounded-lg self-start mb-3">
                           Mass Recruiters / Consultancies
                         </span>
                         <h5 className="text-white text-base font-bold mb-2">Service Sector</h5>
                         <p className="text-[11px] text-slate-400 leading-relaxed mb-4 flex-grow">
-                          Centroid indicates lower CGPA thresholds, flexible aptitude criteria, and higher allowed active arrears.
+                          Companies with lower CGPA thresholds, flexible aptitude criteria, and higher allowed active arrears.
                         </p>
                         <div className="space-y-1.5">
                           {clustered["Service Companies"]?.length > 0 ? (
@@ -718,7 +718,7 @@ export const StudentDashboard: React.FC = () => {
                               </button>
                             ))
                           ) : (
-                            <p className="text-[11px] text-slate-500 italic">No eligible companies in this cluster.</p>
+                            <p className="text-[11px] text-slate-500 italic">No eligible companies in this category.</p>
                           )}
                         </div>
                       </div>
@@ -839,14 +839,14 @@ export const StudentDashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* KNN Similar Alumni Placement Matches */}
+                  {/* Similar Alumni Placement Matches */}
                   <div>
                     <h4 className="text-white font-bold text-sm mb-4 uppercase tracking-wider flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-teal-accent" />
-                      3. KNN Historical Profile Match (Career Blueprint)
+                      3. Historical Profile Match (Career Blueprint)
                     </h4>
                     <p className="text-xs text-slate-400 mb-4 -mt-2">
-                      The K-Nearest Neighbors (KNN) model resolved the most similar historical alumni profiles to map where they got placed:
+                      The AI recommendation model analyzed similar historical alumni profiles to map where they got placed:
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

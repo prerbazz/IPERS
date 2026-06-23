@@ -1,6 +1,8 @@
-from flask import Blueprint, request, jsonify, g
+import io
+import csv
+from flask import Blueprint, request, jsonify, g, Response
 from database import db
-from models import Company, Announcement, CompanyNews
+from models import Company, Announcement, CompanyNews, StudentProfile
 from routes.auth import login_required, roles_required
 
 tpc_bp = Blueprint('tpc', __name__)
@@ -102,6 +104,44 @@ def delete_company(company_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'Failed to delete company: {str(e)}'}), 500
+
+# Report Generation
+@tpc_bp.route('/eligibility-report', methods=['GET'])
+@login_required
+@roles_required('tpc')
+def get_eligibility_report():
+    students = StudentProfile.query.all()
+    companies = Company.query.filter_by(status='Open').all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    header = ['Student Name', 'Roll Number', 'CGPA', 'Arrears', 'Internships', 'Aptitude', 'Technical', 'Communication']
+    for c in companies:
+        header.append(f"Eligible for {c.name}")
+    writer.writerow(header)
+    
+    # Rows
+    for s in students:
+        row = [s.full_name, s.roll_number, s.cgpa, s.arrears, s.internships, s.aptitude_score, s.technical_score, s.communication_score]
+        for c in companies:
+            is_eligible = True
+            if s.cgpa < c.min_cgpa: is_eligible = False
+            if s.arrears > c.allowed_arrears: is_eligible = False
+            if s.aptitude_score < c.min_aptitude: is_eligible = False
+            if s.technical_score < c.min_technical: is_eligible = False
+            if s.communication_score < c.min_communication: is_eligible = False
+            if s.internships < c.min_internships: is_eligible = False
+            
+            row.append("Yes" if is_eligible else "No")
+        writer.writerow(row)
+        
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=eligibility_report.csv"}
+    )
 
 # Communications & News Management
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../../context/AuthContext';
 import { 
   Briefcase, Plus, Edit2, Trash2, Megaphone, Newspaper, 
-  Check, X, ToggleLeft, ToggleRight, GraduationCap, RefreshCw, AlertTriangle
+  Check, X, ToggleLeft, ToggleRight, GraduationCap, RefreshCw, AlertTriangle, Download
 } from 'lucide-react';
 
 export const TpcDashboard: React.FC = () => {
@@ -43,6 +43,27 @@ export const TpcDashboard: React.FC = () => {
   useEffect(() => {
     fetchCompanies();
   }, []);
+
+  const handleExportReport = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/tpc/eligibility-report`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate report.');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Eligibility_Report_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err: any) {
+      alert(err.message || 'Error exporting report.');
+    }
+  };
 
   const fetchCompanies = async () => {
     setCompaniesLoading(true);
@@ -291,10 +312,16 @@ export const TpcDashboard: React.FC = () => {
             
             {/* Manage Companies List */}
             <div className="glass-panel rounded-3xl p-6">
-              <h3 className="font-sans font-bold text-white text-base mb-4 flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-teal-accent" />
-                Active Recruiters Directory
-              </h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-sans font-bold text-white text-base flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-teal-accent" />
+                  Active Recruiters Directory
+                </h3>
+                <button onClick={handleExportReport} className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-main/20 border border-teal-main/50 hover:bg-teal-main/40 text-teal-accent rounded-xl text-xs transition-all font-semibold">
+                  <Download className="w-4 h-4" />
+                  Export Eligibility Report
+                </button>
+              </div>
 
               {companiesLoading ? (
                 <div className="py-12 flex justify-center items-center">
@@ -312,7 +339,7 @@ export const TpcDashboard: React.FC = () => {
                         <th className="pb-3 pr-2">Company</th>
                         <th className="pb-3 px-2 text-center">Eligibility (CGPA / Evaluation / Interns)</th>
                         <th className="pb-3 px-2 text-center">Arrears</th>
-                        <th className="pb-3 px-2 text-center">Cluster Label</th>
+                        <th className="pb-3 px-2 text-center">Category Label</th>
                         <th className="pb-3 px-2 text-center">Recruitment</th>
                         <th className="pb-3 pl-2 text-right">Actions</th>
                       </tr>
