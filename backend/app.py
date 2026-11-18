@@ -2,6 +2,7 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+from sqlalchemy import inspect, text
 
 # Load environment variables from .env
 load_dotenv()
@@ -58,10 +59,25 @@ def create_app():
             'database': 'postgresql' if os.environ.get('DATABASE_URL') else 'sqlite-fallback'
         }), 200
         
-    # Create tables
+    # Create tables and add missing student profile columns for upgrades
     with app.app_context():
         db.create_all()
-        
+        engine = db.engine
+        inspector = inspect(engine)
+        if inspector.has_table('student_profiles'):
+            existing_columns = {col['name'] for col in inspector.get_columns('student_profiles')}
+            missing_columns = []
+            if 'placed' not in existing_columns:
+                missing_columns.append("ALTER TABLE student_profiles ADD COLUMN placed BOOLEAN DEFAULT 0")
+            if 'placed_company' not in existing_columns:
+                missing_columns.append("ALTER TABLE student_profiles ADD COLUMN placed_company VARCHAR(200)")
+            with engine.begin() as conn:
+                for sql in missing_columns:
+                    try:
+                        conn.execute(text(sql))
+                    except Exception:
+                        pass
+    
     return app
 
 if __name__ == '__main__':

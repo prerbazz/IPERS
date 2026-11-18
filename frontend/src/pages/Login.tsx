@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, BookOpen, GraduationCap, Mail, Lock, User, FileText, Briefcase, Award, ArrowLeft, BarChart2, ChevronRight } from 'lucide-react';
+import { GraduationCap, Mail, Lock, User, FileText, Briefcase, Award, ArrowLeft, BarChart2, ChevronRight } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login, register } = useAuth();
@@ -100,7 +100,9 @@ export const Login: React.FC = () => {
         <h1 className="text-[3.5rem] font-extrabold text-white leading-[1.1] z-10 mb-6">
           Intelligent <br/>
           <span className="text-teal-accent">Placement</span> <br/>
-          Intelligence
+          Eligibility & <br/>
+          Recommendation <br/>
+          System
         </h1>
         
         <p className="text-slate-400 text-lg max-w-md z-10 mb-12 leading-relaxed">

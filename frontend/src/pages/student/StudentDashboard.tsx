@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../../context/AuthContext';
 import { 
-  User, Award, AlertTriangle, CheckCircle, Upload, Download, 
-  Megaphone, Newspaper, Compass, Target, Shield, HelpCircle, 
-  ChevronRight, ArrowRight, Award as GoldAward, Star, Lightbulb, UserCheck, GraduationCap
+  User, AlertTriangle, CheckCircle, Upload, Download, 
+  Megaphone, Newspaper, Compass, Target, HelpCircle, 
+  ChevronRight, ArrowRight, Star, Lightbulb, UserCheck, GraduationCap, Award as GoldAward
 } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
-  const { user, profile, token, logout, refreshProfile } = useAuth();
+  const { profile, token, logout, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export const StudentDashboard: React.FC = () => {
           cgpa: parseFloat(cgpa) || 0.0,
           internships: parseInt(internships) || 0,
           arrears: parseInt(arrears) || 0,
-          skills: skills.split(',').map(s => s.trim()).filter(Boolean)
+          skills: skills.split(',').map((s: string) => s.trim()).filter(Boolean)
         })
       });
       const data = await response.json();
@@ -356,8 +356,18 @@ export const StudentDashboard: React.FC = () => {
                   {/* Name Roll */}
                   <div className="pb-3 border-b border-navy-border/50">
                     <p className="text-xs text-slate-400">Student Identity</p>
-                    <h4 className="text-white text-lg font-bold">{profile?.full_name}</h4>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-white text-lg font-bold">{profile?.full_name}</h4>
+                      {profile?.placed && (
+                        <span className="px-2 py-0.5 bg-teal-500/10 border border-teal-500/30 text-teal-accent text-[10px] font-bold rounded-full">
+                          Placed
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-300">{profile?.roll_number}</p>
+                    {profile?.placed && profile?.placed_company && (
+                      <p className="text-[10px] text-slate-400 mt-1">Placed at: <span className="text-white font-semibold">{profile.placed_company}</span></p>
+                    )}
                   </div>
 
                   {/* CGPA Badge */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../../context/AuthContext';
 import { 
   Search, BookOpen, User, Check, AlertTriangle, FileText, 
-  Download, Edit3, Award, GraduationCap, RefreshCw 
+  Download, Edit3, GraduationCap, RefreshCw 
 } from 'lucide-react';
 
 export const FacultyDashboard: React.FC = () => {
@@ -22,6 +22,10 @@ export const FacultyDashboard: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [scoreSheetFile, setScoreSheetFile] = useState<File | null>(null);
+  const [uploadingSheet, setUploadingSheet] = useState(false);
+  const [scoreSheetMessage, setScoreSheetMessage] = useState<string | null>(null);
+  const [scoreSheetError, setScoreSheetError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStudents();
@@ -100,6 +104,68 @@ export const FacultyDashboard: React.FC = () => {
     }
   };
 
+  const handleUploadScoreSheet = async () => {
+    if (!scoreSheetFile) return;
+    setUploadingSheet(true);
+    setScoreSheetError(null);
+    setScoreSheetMessage(null);
+
+    const formData = new FormData();
+    formData.append('file', scoreSheetFile);
+
+    try {
+      const response = await fetch(`${API_BASE}/faculty/students/evaluation/bulk`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to upload score sheet.');
+      }
+      setScoreSheetMessage(data.message || 'Scores uploaded successfully.');
+      setScoreSheetFile(null);
+      fetchStudents(searchQuery);
+    } catch (err: any) {
+      setScoreSheetError(err.message || 'Error uploading score sheet.');
+    } finally {
+      setUploadingSheet(false);
+    }
+  };
+
+  const handleScoreSheetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setScoreSheetFile(e.target.files[0]);
+      setScoreSheetError(null);
+      setScoreSheetMessage(null);
+    }
+  };
+
+  const handleDownloadResume = async (studentId: number, filename?: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/student/resume/${studentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'Failed to download resume.');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || `resume_${studentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || 'Error downloading resume.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-navy-dark text-slate-100 font-sans pb-12">
       {/* Navbar */}
@@ -174,6 +240,34 @@ export const FacultyDashboard: React.FC = () => {
                   Search
                 </button>
               </form>
+            </div>
+
+            <div className="glass-panel rounded-3xl p-5">
+              <h3 className="text-sm font-semibold text-white mb-3">Upload Student Score Sheet</h3>
+              <p className="text-xs text-slate-400 mb-4">Upload a CSV or XLSX file with roll_number and evaluation scores to update all students’ aptitude, technical, and communication marks.</p>
+              {scoreSheetMessage && (
+                <div className="mb-3 p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl text-teal-accent text-xs">{scoreSheetMessage}</div>
+              )}
+              {scoreSheetError && (
+                <div className="mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">{scoreSheetError}</div>
+              )}
+              <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-center">
+                <input
+                  type="file"
+                  accept=".csv,.xlsx"
+                  onChange={handleScoreSheetChange}
+                  className="w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-navy-light file:text-slate-300 file:cursor-pointer hover:file:bg-navy-hover"
+                />
+                <button
+                  type="button"
+                  onClick={handleUploadScoreSheet}
+                  disabled={!scoreSheetFile || uploadingSheet}
+                  className="px-4 py-2 bg-teal-main hover:bg-teal-hover text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                >
+                  {uploadingSheet ? 'Uploading...' : 'Upload Sheet'}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-2">Required columns: <span className="font-semibold">roll_number, aptitude_score, technical_score, communication_score</span></p>
             </div>
 
             {/* Students Table */}
@@ -289,12 +383,12 @@ export const FacultyDashboard: React.FC = () => {
                   <div className="mt-4 pt-3 border-t border-navy-border/50 flex justify-between items-center text-xs">
                     <span className="text-slate-400 flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Student Resume:</span>
                     {selectedStudent.has_resume ? (
-                      <a
-                        href={`${API_BASE}/student/resume/${selectedStudent.id}`}
+                      <button
+                        onClick={() => handleDownloadResume(selectedStudent.id, selectedStudent.resume_name)}
                         className="text-teal-accent hover:underline font-bold flex items-center gap-1"
                       >
                         <Download className="w-3.5 h-3.5" /> PDF Blob
-                      </a>
+                      </button>
                     ) : (
                       <span className="text-slate-500 italic">Not Uploaded</span>
                     )}

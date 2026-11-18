@@ -126,6 +126,10 @@ def get_eligibility_report():
     for s in students:
         row = [s.full_name, s.roll_number, s.cgpa, s.arrears, s.internships, s.aptitude_score, s.technical_score, s.communication_score]
         for c in companies:
+            if s.placed:
+                row.append('Placed')
+                continue
+
             is_eligible = True
             if s.cgpa < c.min_cgpa: is_eligible = False
             if s.arrears > c.allowed_arrears: is_eligible = False
@@ -142,6 +146,37 @@ def get_eligibility_report():
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=eligibility_report.csv"}
     )
+
+@tpc_bp.route('/placed-students', methods=['GET'])
+@login_required
+@roles_required('tpc')
+def get_placed_students():
+    placed = StudentProfile.query.filter_by(placed=True).all()
+    return jsonify([s.to_dict() for s in placed]), 200
+
+@tpc_bp.route('/students/mark-placed', methods=['POST'])
+@login_required
+@roles_required('tpc')
+def mark_student_placed():
+    data = request.get_json() or {}
+    roll_number = data.get('roll_number', '').strip()
+    placed_company = data.get('placed_company', '').strip()
+
+    if not roll_number:
+        return jsonify({'message': 'roll_number is required to mark placement.'}), 400
+
+    student = StudentProfile.query.filter_by(roll_number=roll_number).first()
+    if not student:
+        return jsonify({'message': 'Student not found.'}), 404
+
+    student.placed = True
+    student.placed_company = placed_company or student.placed_company
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Student marked as placed.', 'student': student.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to mark student as placed: {str(e)}'}), 500
 
 # Communications & News Management
 

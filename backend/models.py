@@ -56,6 +56,8 @@ class StudentProfile(db.Model):
     
     arrears = db.Column(db.Integer, default=0)
     skills = db.Column(db.String(500), default='')  # Comma separated list of skills
+    placed = db.Column(db.Boolean, default=False)
+    placed_company = db.Column(db.String(200), nullable=True)
     
     def to_dict(self, include_resume=False):
         data = {
@@ -73,7 +75,9 @@ class StudentProfile(db.Model):
             'cgpa_verified': self.cgpa_verified,
             'internships_verified': self.internships_verified,
             'arrears': self.arrears,
-            'skills': [s.strip() for s in self.skills.split(',')] if self.skills else []
+            'skills': [s.strip() for s in self.skills.split(',')] if self.skills else [],
+            'placed': self.placed,
+            'placed_company': self.placed_company
         }
         if include_resume and self.resume_data:
             import base64

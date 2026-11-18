@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, API_BASE } from '../../context/AuthContext';
 import { 
-  Briefcase, Plus, Edit2, Trash2, Megaphone, Newspaper, 
-  Check, X, ToggleLeft, ToggleRight, GraduationCap, RefreshCw, AlertTriangle, Download
+  Briefcase, Plus, Edit2, Trash2, Megaphone, Newspaper, Award,
+  Check, X, GraduationCap, RefreshCw, Download
 } from 'lucide-react';
 
 export const TpcDashboard: React.FC = () => {
@@ -11,6 +11,8 @@ export const TpcDashboard: React.FC = () => {
   // Data lists
   const [companies, setCompanies] = useState<any[]>([]);
   const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [placedStudents, setPlacedStudents] = useState<any[]>([]);
+  const [placedLoading, setPlacedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Company Form states
@@ -40,8 +42,16 @@ export const TpcDashboard: React.FC = () => {
   const [newsSuccess, setNewsSuccess] = useState<string | null>(null);
   const [newsError, setNewsError] = useState<string | null>(null);
 
+  // Placement marking states
+  const [placementRollNumber, setPlacementRollNumber] = useState('');
+  const [placementCompany, setPlacementCompany] = useState('');
+  const [placementSuccess, setPlacementSuccess] = useState<string | null>(null);
+  const [placementError, setPlacementError] = useState<string | null>(null);
+  const [placingStudent, setPlacingStudent] = useState(false);
+
   useEffect(() => {
     fetchCompanies();
+    fetchPlacedStudents();
   }, []);
 
   const handleExportReport = async () => {
@@ -81,6 +91,24 @@ export const TpcDashboard: React.FC = () => {
       setError(err.message || 'Error occurred.');
     } finally {
       setCompaniesLoading(false);
+    }
+  };
+
+  const fetchPlacedStudents = async () => {
+    setPlacedLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/tpc/placed-students`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to retrieve placed students.');
+      }
+      const data = await response.json();
+      setPlacedStudents(data);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setPlacedLoading(false);
     }
   };
 
@@ -258,6 +286,39 @@ export const TpcDashboard: React.FC = () => {
     }
   };
 
+  const handleMarkPlaced = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPlacementSuccess(null);
+    setPlacementError(null);
+    setPlacingStudent(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/tpc/students/mark-placed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          roll_number: placementRollNumber,
+          placed_company: placementCompany
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to mark student as placed.');
+      }
+      setPlacementSuccess('Student marked placed successfully.');
+      setPlacementRollNumber('');
+      setPlacementCompany('');
+      fetchPlacedStudents();
+    } catch (err: any) {
+      setPlacementError(err.message || 'Error occurred.');
+    } finally {
+      setPlacingStudent(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-navy-dark text-slate-100 font-sans pb-12">
       {/* Navbar */}
@@ -386,7 +447,7 @@ export const TpcDashboard: React.FC = () => {
                           <td className="py-3.5 pl-2 text-right">
                             <div className="flex gap-2 justify-end">
                               <button
-                                onClick={() => handleCompanySubmit && handleEditCompany(c)}
+                                onClick={() => handleEditCompany(c)}
                                 className="p-1.5 hover:bg-navy-light text-slate-400 hover:text-white rounded transition-colors"
                                 title="Edit Criteria"
                               >
@@ -407,6 +468,98 @@ export const TpcDashboard: React.FC = () => {
                   </table>
                 </div>
               )}
+            </div>
+
+            {/* Placed Students Box */}
+            <div className="glass-panel rounded-3xl p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-sans font-bold text-white text-base flex items-center gap-2">
+                  <Award className="w-4 h-4 text-teal-accent" />
+                  Placed Students This Batch
+                </h3>
+                <button
+                  onClick={fetchPlacedStudents}
+                  className="text-xs text-slate-300 hover:text-white transition-colors"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              {placedLoading ? (
+                <div className="py-8 flex justify-center items-center">
+                  <div className="w-8 h-8 border-2 border-teal-accent border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : placedStudents.length === 0 ? (
+                <p className="text-xs text-slate-500 italic">No students are marked as placed yet.</p>
+              ) : (
+                <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2">
+                  {placedStudents.map((student) => (
+                    <div key={student.id} className="p-3 bg-navy-dark/40 border border-navy-border rounded-2xl">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white">{student.full_name}</p>
+                          <p className="text-[10px] text-slate-400">{student.roll_number}</p>
+                        </div>
+                        <span className="px-2 py-0.5 bg-teal-500/10 border border-teal-500/20 text-teal-accent text-[10px] font-bold rounded-full">Placed</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-2">Company: <span className="text-slate-200 font-semibold">{student.placed_company || 'Not assigned'}</span></p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Placement Marking Form */}
+            <div className="glass-panel rounded-3xl p-6">
+              <h3 className="font-sans font-bold text-white text-base mb-4 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-teal-accent" />
+                Mark Student as Placed
+              </h3>
+
+              {placementSuccess && (
+                <div className="mb-4 p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl text-teal-accent text-xs">
+                  {placementSuccess}
+                </div>
+              )}
+              {placementError && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">
+                  {placementError}
+                </div>
+              )}
+
+              <form onSubmit={handleMarkPlaced} className="space-y-4">
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">Student Roll Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={placementRollNumber}
+                    onChange={(e) => setPlacementRollNumber(e.target.value)}
+                    placeholder="CS2026001"
+                    className="w-full bg-navy-dark border border-navy-border focus:border-teal-accent/50 rounded-xl py-2 px-3 text-xs text-white outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">Placed Company</label>
+                  <input
+                    type="text"
+                    required
+                    value={placementCompany}
+                    onChange={(e) => setPlacementCompany(e.target.value)}
+                    placeholder="Google"
+                    className="w-full bg-navy-dark border border-navy-border focus:border-teal-accent/50 rounded-xl py-2 px-3 text-xs text-white outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={placingStudent}
+                  className="w-full bg-teal-main hover:bg-teal-hover text-white font-bold py-2.5 rounded-xl text-xs transition-colors disabled:opacity-50"
+                >
+                  {placingStudent ? 'Marking...' : 'Mark as Placed'}
+                </button>
+              </form>
             </div>
 
             {/* Company CRUD configuration Form */}

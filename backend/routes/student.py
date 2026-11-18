@@ -132,7 +132,7 @@ def analyze_opportunities():
         
     # Get all active companies
     companies = Company.query.filter_by(status='Open').all()
-    
+
     # 1. Run Decision Tree Eligibility Check
     eligible_companies, ineligible_companies = run_decision_tree_eligibility(student, companies)
     
